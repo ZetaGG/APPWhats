@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".MainActivity">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="#00EE18"
+        android:padding="12dp"
+        android:gravity="center"
+        android:text="Contactos"
+        android:textColor="#FFFFFF"
+        android:textSize="23sp"
+        android:textStyle="bold"
+        android:elevation="4dp" />
+ <!-- ListView to display contact with notifications t -->
+
+    <ListView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/lvContactos"
+        android:layout_marginTop="8dp"
+        android:dividerHeight="1dp"
+        android:divider="@android:color/darker_gray"
+        android:background="#FDFDFD"
+        android:padding="8dp"
+        android:layout_gravity="center_horizontal"
+        android:scrollbars="vertical"
+        android:contextClickable="true"
+        android:clickable="true"
+        >
+
+
+    </ListView>
+
+
+
+</LinearLayout>
