@@ -135,7 +135,6 @@ public class MainActivity extends AppCompatActivity {
         if (adaptadorContactos != null)
             adaptadorContactos.notifyDataSetChanged();
     }
-
     private void cambiarALayoutChat() {
         setContentView(R.layout.chat);
 
