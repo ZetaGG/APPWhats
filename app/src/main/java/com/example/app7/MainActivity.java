@@ -14,6 +14,7 @@ public class MainActivity extends AppCompatActivity {
     // Login views
     private EditText txtIP, txtUsuario;
     private Button btnConectarServer;
+    private String nombreUsuarioActual;
 
     // Contactos views
     private RecyclerView rvContactos;
@@ -70,6 +71,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void showChatLayout() {
+        ImageButton btnBack = findViewById(R.id.btnBackToContactos);
+        btnBack.setOnClickListener(v -> showContactosLayout());
         setContentView(R.layout.chat); // Tu layout de chat
         txtMensaje = findViewById(R.id.txtMensaje);
         btnEnviar = findViewById(R.id.btnEnviar);
@@ -87,6 +90,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void conectarAlServidor(String ip, int puerto, String nombreUsuario) {
+        nombreUsuarioActual = nombreUsuario; // Guardas el nombre del usuario actual
         chatClient = new ChatClient(ip, puerto, nombreUsuario, new Handler(Looper.getMainLooper()), new ChatClient.Listener() {
             @Override
             public void onUserListUpdate(String rawUsers) {
@@ -118,7 +122,10 @@ public class MainActivity extends AppCompatActivity {
                 for (String u : users.split(",")) {
                     String[] partes = u.split("\\|");
                     if (partes.length == 2) {
-                        listaContactos.add(new Contacto(partes[0], partes[1]));
+                        // Solo agrega si NO es el usuario actual
+                        if (!partes[0].equalsIgnoreCase(nombreUsuarioActual)) {
+                            listaContactos.add(new Contacto(partes[0], partes[1]));
+                        }
                     }
                 }
             }
@@ -126,7 +133,6 @@ public class MainActivity extends AppCompatActivity {
                 contactoAdapter.notifyDataSetChanged();
         });
     }
-
     private void mostrarMensajeChat(String mensaje) {
         runOnUiThread(() -> {
             if (tvMensajes != null)
