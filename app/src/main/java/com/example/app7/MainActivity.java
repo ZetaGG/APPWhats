@@ -107,14 +107,33 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.contactos);
 
         listViewContactos = findViewById(R.id.lvContactos);
-        adaptadorContactos = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, listaContactos);
-        listViewContactos.setAdapter(adaptadorContactos);
+        if (adaptadorContactos == null) {
+            adaptadorContactos = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, listaContactos);
+            listViewContactos.setAdapter(adaptadorContactos);
+        } else {
+            adaptadorContactos.notifyDataSetChanged();
+        }
 
         listViewContactos.setOnItemClickListener((parent, view, position, id) -> {
             contactoActual = listaContactos.get(position);
             cambiarALayoutChat();
             tvNombreDispositivo.setText("Chat con " + contactoActual.getNombre());
         });
+    }
+
+    private void actualizarListaContactos(String usuariosRaw) {
+        listaContactos.clear();
+        String users = usuariosRaw.substring("#usuarios:".length());
+        if (!users.isEmpty()) {
+            for (String u : users.split(",")) {
+                String[] partes = u.split("\\|");
+                if (partes.length == 2) {
+                    listaContactos.add(new Contacto(partes[0], partes[1]));
+                }
+            }
+        }
+        if (adaptadorContactos != null)
+            adaptadorContactos.notifyDataSetChanged();
     }
 
     private void cambiarALayoutChat() {
@@ -144,20 +163,7 @@ public class MainActivity extends AppCompatActivity {
         }).start();
     }
 
-    private void actualizarListaContactos(String usuariosRaw) {
-        listaContactos.clear();
-        String users = usuariosRaw.substring("#usuarios:".length());
-        if (!users.isEmpty()) {
-            for (String u : users.split(",")) {
-                String[] partes = u.split("\\|");
-                if (partes.length == 2) {
-                    listaContactos.add(new Contacto(partes[0], partes[1]));
-                }
-            }
-        }
-        if (adaptadorContactos != null)
-            adaptadorContactos.notifyDataSetChanged();
-    }
+
 
     private void mostrarMensajeChat(String mensaje) {
         if (tvMessageLog != null)
