@@ -72,6 +72,8 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+
+
     private void conectarAlServidor(String ip, int puerto, String nombreUsuario) {
         new Thread(() -> {
             try {
@@ -145,18 +147,23 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void actualizarListaContactos(String usuariosRaw) {
-        listaContactos.clear();
         String users = usuariosRaw.substring("#usuarios:".length());
+        ArrayList<Contacto> nuevaLista = new ArrayList<>();
         if (!users.isEmpty()) {
             for (String u : users.split(",")) {
                 String[] partes = u.split("\\|");
                 if (partes.length == 2) {
-                    listaContactos.add(new Contacto(partes[0], partes[1]));
+                    nuevaLista.add(new Contacto(partes[0], partes[1]));
                 }
             }
         }
-        if (adaptadorContactos != null)
-            adaptadorContactos.notifyDataSetChanged();
+        // Solo actualiza si hay cambios
+        if (!nuevaLista.equals(listaContactos)) {
+            listaContactos.clear();
+            listaContactos.addAll(nuevaLista);
+            if (adaptadorContactos != null)
+                adaptadorContactos.notifyDataSetChanged();
+        }
     }
 
     private void mostrarMensajeChat(String mensaje) {
