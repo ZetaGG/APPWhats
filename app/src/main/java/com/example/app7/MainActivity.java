@@ -6,29 +6,33 @@ import android.os.Looper;
 import android.view.View;
 import android.widget.*;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
-    private EditText txtIP, txtUsuario, txtMensaje;
+    // Login views
+    private EditText txtIP, txtUsuario;
     private Button btnConectarServer;
-    private ListView listViewContactos;
-    private TextView tvMessageLog, tvNombreDispositivo;
-    private ImageButton btnEnviarMensaje;
 
-    private ChatClient chatClient;
+    // Contactos views
+    private RecyclerView rvContactos;
+    private ContactoAdapter contactoAdapter;
+
+    // Chat views
+    private TextView tvMensajes, tvNombreDispositivo;
+    private EditText txtMensaje;
+    private ImageButton btnEnviar;
+
+    // Datos
     private final ArrayList<Contacto> listaContactos = new ArrayList<>();
-    private ArrayAdapter<Contacto> adaptadorContactos;
     private Contacto contactoActual;
+    private ChatClient chatClient;
     private Handler handler;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-        // Crea el adaptador una sola vez
-        adaptadorContactos = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, listaContactos);
-
-        // Inicialmente muestra el login
         showLoginLayout();
         handler = new Handler(Looper.getMainLooper());
     }
@@ -51,25 +55,30 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void showContactosLayout() {
-        setContentView(R.layout.contactos); // Tu layout de contactos
-        listViewContactos = findViewById(R.id.lvContactos);
-        listViewContactos.setAdapter(adaptadorContactos);
+        setContentView(R.layout.contactos); // Tu layout de contactos con RecyclerView
+        rvContactos = findViewById(R.id.rvContactos);
 
-        listViewContactos.setOnItemClickListener((parent, view, position, id) -> {
-            contactoActual = listaContactos.get(position);
-            showChatLayout();
-            tvNombreDispositivo.setText("Chat con " + contactoActual.getNombre());
-        });
+        if (contactoAdapter == null) {
+            contactoAdapter = new ContactoAdapter(listaContactos, contacto -> {
+                contactoActual = contacto;
+                showChatLayout();
+                tvNombreDispositivo.setText("Chat con " + contacto.getNombre());
+            });
+        }
+        rvContactos.setLayoutManager(new LinearLayoutManager(this));
+        rvContactos.setAdapter(contactoAdapter);
     }
 
     private void showChatLayout() {
         setContentView(R.layout.chat); // Tu layout de chat
         txtMensaje = findViewById(R.id.txtMensaje);
-        btnEnviarMensaje = findViewById(R.id.btnEnviar);
-        tvMessageLog = findViewById(R.id.tvMensajes);
+        btnEnviar = findViewById(R.id.btnEnviar);
+        tvMensajes = findViewById(R.id.tvMensajes);
         tvNombreDispositivo = findViewById(R.id.tvNombreDispositivo);
 
-        btnEnviarMensaje.setOnClickListener(v -> {
+        tvNombreDispositivo.setText("Chat con " + (contactoActual != null ? contactoActual.getNombre() : ""));
+
+        btnEnviar.setOnClickListener(v -> {
             String mensaje = txtMensaje.getText().toString().trim();
             if (mensaje.isEmpty() || contactoActual == null) return;
             chatClient.sendPrivateMessage(contactoActual.getNombre(), mensaje);
@@ -113,14 +122,15 @@ public class MainActivity extends AppCompatActivity {
                     }
                 }
             }
-            adaptadorContactos.notifyDataSetChanged();
+            if (contactoAdapter != null)
+                contactoAdapter.notifyDataSetChanged();
         });
     }
 
     private void mostrarMensajeChat(String mensaje) {
         runOnUiThread(() -> {
-            if (tvMessageLog != null)
-                tvMessageLog.append(mensaje + "\n");
+            if (tvMensajes != null)
+                tvMensajes.append(mensaje + "\n");
         });
     }
 
