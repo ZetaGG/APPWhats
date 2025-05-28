@@ -1,61 +1,30 @@
 package com.example.app7;
 
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
-import android.widget.ArrayAdapter;
-import android.widget.Button;
-import android.widget.EditText;
-import android.widget.ListView;
-import android.widget.TextView;
-import android.widget.Toast;
-import android.widget.ImageButton;
-
-import androidx.activity.EdgeToEdge;
+import android.widget.*;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
-
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
-
     private EditText txtIP, txtUsuario, txtMensaje;
     private Button btnConectarServer;
     private ListView listViewContactos;
     private TextView tvMessageLog, tvNombreDispositivo;
     private ImageButton btnEnviarMensaje;
 
-    private Socket socket;
-    private BufferedWriter writer;
-    private boolean isRunning = false;
-    private Handler handler = new Handler(Looper.getMainLooper());
-
-    private ArrayList<Contacto> listaContactos = new ArrayList<>();
+    private ChatClient chatClient;
+    private final ArrayList<Contacto> listaContactos = new ArrayList<>();
     private ArrayAdapter<Contacto> adaptadorContactos;
     private Contacto contactoActual;
+    private Handler handler;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
-
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
-            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
-            return insets;
-        });
+        handler = new Handler(Looper.getMainLooper());
 
         txtIP = findViewById(R.id.txtIP);
         txtUsuario = findViewById(R.id.txtUsuario);
@@ -68,51 +37,39 @@ public class MainActivity extends AppCompatActivity {
                 Toast.makeText(this, "IP y usuario requeridos", Toast.LENGTH_SHORT).show();
                 return;
             }
-            conectarAlServidor(ip, 5000, nombreUsuario); // Cambia 5059 si tu puerto es otro
+            conectarAlServidor(ip, 5000, nombreUsuario);
         });
     }
 
     private void conectarAlServidor(String ip, int puerto, String nombreUsuario) {
-        new Thread(() -> {
-            try {
-                socket = new Socket(ip, puerto);
-                writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8));
-                BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
-
-                // Enviar solo el nombre de usuario como primer mensaje
-                writer.write(nombreUsuario + "\n");
-                writer.flush();
-
-                isRunning = true;
-
-                handler.post(this::cambiarALayoutContactos);
-
-                while (isRunning) {
-                    String line = reader.readLine();
-                    if (line == null) break;
-                    if (line.startsWith("#usuarios:")) {
-                        handler.post(() -> actualizarListaContactos(line));
-                    } else if (line.startsWith("[Privado de ")) {
-                        handler.post(() -> mostrarMensajeChat(line));
-                    }
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-                handler.post(() -> Toast.makeText(MainActivity.this, "No se pudo conectar al servidor: " + e.getMessage(), Toast.LENGTH_LONG).show());
+        chatClient = new ChatClient(ip, puerto, nombreUsuario, handler, new ChatClient.Listener() {
+            @Override
+            public void onUserListUpdate(String rawUsers) {
+                actualizarListaContactos(rawUsers);
             }
-        }).start();
+            @Override
+            public void onPrivateMessage(String message) {
+                mostrarMensajeChat(message);
+            }
+            @Override
+            public void onError(String error) {
+                Toast.makeText(MainActivity.this, error, Toast.LENGTH_LONG).show();
+            }
+            @Override
+            public void onDisconnected() {
+                Toast.makeText(MainActivity.this, "Desconectado del servidor", Toast.LENGTH_SHORT).show();
+            }
+        });
+        chatClient.connect();
+        cambiarALayoutContactos();
     }
 
     private void cambiarALayoutContactos() {
         setContentView(R.layout.contactos);
-
         listViewContactos = findViewById(R.id.lvContactos);
-        if (adaptadorContactos == null) {
-            adaptadorContactos = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, listaContactos);
-            listViewContactos.setAdapter(adaptadorContactos);
-        } else {
-            adaptadorContactos.notifyDataSetChanged();
-        }
+
+        adaptadorContactos = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, listaContactos);
+        listViewContactos.setAdapter(adaptadorContactos);
 
         listViewContactos.setOnItemClickListener((parent, view, position, id) -> {
             contactoActual = listaContactos.get(position);
@@ -135,6 +92,7 @@ public class MainActivity extends AppCompatActivity {
         if (adaptadorContactos != null)
             adaptadorContactos.notifyDataSetChanged();
     }
+
     private void cambiarALayoutChat() {
         setContentView(R.layout.chat);
 
@@ -146,58 +104,21 @@ public class MainActivity extends AppCompatActivity {
         btnEnviarMensaje.setOnClickListener(v -> {
             String mensaje = txtMensaje.getText().toString().trim();
             if (mensaje.isEmpty() || contactoActual == null) return;
-            enviarMensajePrivado(contactoActual.getNombre(), mensaje);
+            chatClient.sendPrivateMessage(contactoActual.getNombre(), mensaje);
             txtMensaje.setText("");
         });
     }
-
-    private void enviarMensajePrivado(String destinatario, String mensaje) {
-        new Thread(() -> {
-            try {
-                writer.write("/para:" + destinatario + " " + mensaje + "\n");
-                writer.flush();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }).start();
-    }
-
-
 
     private void mostrarMensajeChat(String mensaje) {
         if (tvMessageLog != null)
             tvMessageLog.append(mensaje + "\n");
     }
 
-    public class Contacto {
-        private String nombre;
-        private String ip;
-
-        public Contacto(String nombre, String ip) {
-            this.nombre = nombre;
-            this.ip = ip;
-        }
-
-        public String getNombre() {
-            return nombre;
-        }
-
-        public String getIp() {
-            return ip;
-        }
-
-        @Override
-        public String toString() {
-            return nombre;
-        }
-    }
-
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        isRunning = false;
-        try {
-            if (socket != null) socket.close();
-        } catch (IOException e) { /* Ignorar */ }
+        if (chatClient != null) {
+            chatClient.disconnect();
+        }
     }
 }
