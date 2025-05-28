@@ -1,7 +1,6 @@
 package com.example.app7;
 
 import android.os.Handler;
-
 import java.io.*;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
