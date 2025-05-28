@@ -9,6 +9,9 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
     // Login views
@@ -30,6 +33,9 @@ public class MainActivity extends AppCompatActivity {
     private Contacto contactoActual;
     private ChatClient chatClient;
     private Handler handler;
+
+    // Historial de chats [clave: nombre del contacto, valor: lista de mensajes]
+    private final Map<String, List<String>> historialChats = new HashMap<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -71,7 +77,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void showChatLayout() {
-        setContentView(R.layout.chat); // <-- Primero se carga el layout
+        setContentView(R.layout.chat);
 
         ImageButton btnBack = findViewById(R.id.btnBackToContactos);
         btnBack.setOnClickListener(v -> showContactosLayout());
@@ -83,10 +89,23 @@ public class MainActivity extends AppCompatActivity {
 
         tvNombreDispositivo.setText("Chat con " + (contactoActual != null ? contactoActual.getNombre() : ""));
 
+        // Mostrar historial si existe
+        if (contactoActual != null) {
+            List<String> historial = historialChats.get(contactoActual.getNombre());
+            tvMensajes.setText("");
+            if (historial != null) {
+                for (String m : historial) {
+                    tvMensajes.append(m + "\n");
+                }
+            }
+        }
+
         btnEnviar.setOnClickListener(v -> {
             String mensaje = txtMensaje.getText().toString().trim();
             if (mensaje.isEmpty() || contactoActual == null) return;
             chatClient.sendPrivateMessage(contactoActual.getNombre(), mensaje);
+            guardarMensajeEnHistorial(contactoActual.getNombre(), "Yo: " + mensaje);
+            tvMensajes.append("Yo: " + mensaje + "\n");
             txtMensaje.setText("");
         });
     }
@@ -135,11 +154,23 @@ public class MainActivity extends AppCompatActivity {
                 contactoAdapter.notifyDataSetChanged();
         });
     }
+
     private void mostrarMensajeChat(String mensaje) {
         runOnUiThread(() -> {
-            if (tvMensajes != null)
+            if (tvMensajes != null && contactoActual != null) {
+                guardarMensajeEnHistorial(contactoActual.getNombre(), mensaje);
                 tvMensajes.append(mensaje + "\n");
+            }
         });
+    }
+
+    private void guardarMensajeEnHistorial(String nombreContacto, String mensaje) {
+        List<String> historial = historialChats.get(nombreContacto);
+        if (historial == null) {
+            historial = new ArrayList<>();
+            historialChats.put(nombreContacto, historial);
+        }
+        historial.add(mensaje);
     }
 
     @Override
