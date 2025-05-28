@@ -1,4 +1,6 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/chatLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -15,21 +17,21 @@
 
         <ImageButton
             android:id="@+id/btnBackToContactos"
-            android:layout_width="40dp"
+            android:layout_width="94dp"
             android:layout_height="40dp"
-            android:src="@android:drawable/ic_media_previous"
-            android:contentDescription="Volver a contactos"
             android:background="?attr/selectableItemBackgroundBorderless"
-            android:tint="?android:attr/textColorPrimary"/>
+            android:contentDescription="Volver a contactos"
+            android:src="@android:drawable/ic_media_previous"
+            tools:ignore="TouchTargetSizeCheck" />
 
         <TextView
             android:id="@+id/tvNombreDispositivo"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_width="60dp"
+            android:layout_height="37dp"
+            android:layout_marginStart="8dp"
             android:text="Chat"
             android:textSize="18sp"
-            android:textStyle="bold"
-            android:layout_marginStart="8dp"/>
+            android:textStyle="bold" />
     </LinearLayout>
 
     <ScrollView
@@ -45,7 +47,7 @@
             android:layout_height="wrap_content"
             android:text=""
             android:textSize="16sp"
-            android:padding="4dp"/>
+            android:padding="4dp" />
     </ScrollView>
 
     <LinearLayout
@@ -64,7 +66,10 @@
             android:id="@+id/btnEnviar"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Enviar"
             android:src="@android:drawable/ic_menu_send"
-            android:contentDescription="Enviar"/>
+            app:tint="@android:color/holo_blue_dark"
+            tools:ignore="TouchTargetSizeCheck" />
     </LinearLayout>
 </LinearLayout>

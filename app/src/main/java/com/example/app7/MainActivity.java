@@ -71,9 +71,11 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void showChatLayout() {
+        setContentView(R.layout.chat); // <-- Primero se carga el layout
+
         ImageButton btnBack = findViewById(R.id.btnBackToContactos);
         btnBack.setOnClickListener(v -> showContactosLayout());
-        setContentView(R.layout.chat); // Tu layout de chat
+
         txtMensaje = findViewById(R.id.txtMensaje);
         btnEnviar = findViewById(R.id.btnEnviar);
         tvMensajes = findViewById(R.id.tvMensajes);
